@@ -1,13 +1,12 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-from typing import List, Optional
-
 from utils.embeds import EmbedBuilder
 from utils.api_client import APIClient
 from config import Config
+from typing import List
 
-MAX_OPTIONS = 25  # Discord's select limit
+MAX_OPTIONS = 25  # Discord select menu limit
 
 # --- UI Components ---
 
@@ -170,16 +169,12 @@ class Manga(commands.Cog):
         view = MangaPaginationView(manga_results)
         await self._send_embed(ctxorinteraction, embed, view=view, ephemeral=ephemeral)
 
-    # --- Prefix Command ---
     @commands.command(name="manga")
     async def manga_prefix(self, ctx, *, query: str):
         """Search for manga (prefix command)"""
         await ctx.typing()
         await self._search_manga(ctx, query, ephemeral=False)
 
-    # --- No-Prefix support: handled externally in on_message ---
-
-    # --- Slash Command ---
     @app_commands.command(name="manga", description="Search for manga")
     @app_commands.describe(query="Manga title to search for")
     async def manga_slash(self, interaction: discord.Interaction, query: str):
@@ -187,7 +182,6 @@ class Manga(commands.Cog):
         await interaction.response.defer(thinking=True)
         await self._search_manga(interaction, query, ephemeral=True)
 
-    # --- Anime search (prefix & slash) ---
     async def _search_anime(self, ctxorinteraction, query: str, ephemeral=False):
         if len(query) < 2:
             return await self._send_embed(ctxorinteraction,
@@ -238,7 +232,6 @@ class Manga(commands.Cog):
         await interaction.response.defer(thinking=True)
         await self._search_anime(interaction, query, ephemeral=True)
 
-    # --- Character search (prefix & slash) ---
     async def _search_character(self, ctxorinteraction, query: str, ephemeral=False):
         if len(query) < 2:
             return await self._send_embed(ctxorinteraction,
@@ -285,7 +278,6 @@ class Manga(commands.Cog):
         await interaction.response.defer(thinking=True)
         await self._search_character(interaction, query, ephemeral=True)
 
-    # --- Random manga/anime ---
     async def _random_manga(self, ctxorinteraction, ephemeral=False):
         async with APIClient() as client:
             data = await client.get("https://api.jikan.moe/v4/random/manga")
@@ -355,7 +347,6 @@ class Manga(commands.Cog):
         await interaction.response.defer(thinking=True)
         await self._random_anime(interaction, ephemeral=True)
 
-    # --- Helper: unified send (for ctx or interaction) ---
     async def _send_embed(self, ctxorinteraction, embed, view=None, ephemeral=False):
         try:
             if isinstance(ctxorinteraction, discord.Interaction):
@@ -363,7 +354,6 @@ class Manga(commands.Cog):
             else:
                 await ctxorinteraction.send(embed=embed, view=view)
         except Exception as e:
-            # fallback
             if isinstance(ctxorinteraction, discord.Interaction):
                 await ctxorinteraction.followup.send(content="An error occurred.", ephemeral=True)
             else:
